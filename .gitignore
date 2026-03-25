@@ -24,3 +24,6 @@ override.tf.json
 
 #Ignore lock file
 .terraform.lock.hcl
+
+# Other files to ignore
+vpcs.txt

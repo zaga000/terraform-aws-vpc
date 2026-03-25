@@ -14,13 +14,17 @@ resource "aws_vpc" "main" {
   )
 }
 
-# Create 2 public subnets across availability zones
+# Create public subnets across availability zones
 resource "aws_subnet" "public_subnet" {
   count                   = var.public_subnet_count
   vpc_id                  = aws_vpc.main.id
   cidr_block              = cidrsubnet(var.vpc_cidr_block, 8, count.index)
   availability_zone       = element(data.aws_availability_zones.available.names, count.index)
   map_public_ip_on_launch = true
+
+  provisioner "local-exec" {
+    command = "echo ${self.cidr_block} >> subnets.txt"
+  }
 
   tags = merge(
     var.tags,
@@ -31,12 +35,16 @@ resource "aws_subnet" "public_subnet" {
   )
 }
 
-# Create 2 private subnets for application tier
+# Create private subnets for application tier
 resource "aws_subnet" "private_subnet" {
   count             = var.private_subnet_count
   vpc_id            = aws_vpc.main.id
   cidr_block        = cidrsubnet(var.vpc_cidr_block, 8, count.index + 10)
   availability_zone = element(data.aws_availability_zones.available.names, count.index)
+
+  provisioner "local-exec" {
+    command = "echo ${self.cidr_block} >> subnets.txt"
+  }
 
   tags = merge(
     var.tags,
@@ -47,12 +55,16 @@ resource "aws_subnet" "private_subnet" {
   )
 }
 
-# Create 2 database subnets in different availability zones
+# Create database subnets in different availability zones
 resource "aws_subnet" "db_subnet" {
   count             = var.db_subnet_count
   vpc_id            = aws_vpc.main.id
   cidr_block        = cidrsubnet(var.vpc_cidr_block, 8, count.index + 20)
   availability_zone = element(data.aws_availability_zones.available.names, count.index)
+
+  provisioner "local-exec" {
+    command = "echo ${self.cidr_block} >> subnets.txt"
+  }
 
   tags = merge(
     var.tags,
@@ -178,4 +190,22 @@ resource "aws_route_table_association" "db_route_table_association" {
   count          = var.db_subnet_count
   subnet_id      = aws_subnet.db_subnet[count.index].id
   route_table_id = aws_route_table.db_route_table.id
+}
+
+resource "terraform_data" "list_vpcs" {
+  depends_on = [aws_vpc.main]
+
+  triggers_replace = [
+    aws_vpc.main.id
+  ]
+
+  provisioner "local-exec" {
+    command = "aws ec2 describe-vpcs --query 'Vpcs[*].VpcId' --output text > vpcs.txt"
+  }
+
+  provisioner "local-exec" {
+    when       = destroy
+    command    = "rm -f vpcs.txt subnets.txt"
+    on_failure = continue
+  }
 }
