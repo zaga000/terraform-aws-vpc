@@ -200,7 +200,7 @@ resource "terraform_data" "list_vpcs" {
   ]
 
   provisioner "local-exec" {
-    command = "aws ec2 describe-vpcs --query 'Vpcs[*].VpcId' --output text > vpcs.txt"
+    command = "aws ec2 describe-vpcs --profile terraform --query 'Vpcs[*].VpcId' --output text > vpcs.txt"
   }
 
   provisioner "local-exec" {
