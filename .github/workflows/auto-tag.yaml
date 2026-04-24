@@ -1,0 +1,54 @@
+name: Custom Auto Tag from CHANGELOG
+
+on:
+  push:
+    branches:
+      - main:
+    paths:
+      - 'CHANGELOG.md'
+
+jobs:
+  create-tag:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Extract version from CHANGELOG
+        id: extract_version
+        run: |
+          VERSION=$(awk '/##/ {print $2; exit;}' CHANGELOG.md)
+          MESSAGE=$(awk '/^## / {count++} count==1 && /^\*/ {gsub(/^\* */, ""); print}' CHANGELOG.md)
+          
+          
+          if [[ -z "$VERSION" ]]; then
+            echo "ERROR: No version found in CHANGELOG.md"
+            exit 1
+          fi
+
+          echo "Found version: $VERSION"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Create Git Tag
+        id: create_tag
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+
+      - name: Create Tag
+        run: |
+          TAG_NAME="v${{ env.VERSION }}"
+          if git rev-parse -q --verify "refs/tags/${TAG_NAME}" > /dev/null; then
+            echo "Tag ${TAG_NAME} already exists. Skipping tag creation."
+          else
+            git tag -a "$TAG_NAME" -m "${{ env.MESSAGE }}"
+            git push origin "$TAG_NAME"
+          fi
+
+      - name: 
+
