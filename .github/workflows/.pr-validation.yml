@@ -1,0 +1,60 @@
+name: 1. PR Validation (Pre-commit)
+
+on: 
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.14.8
+      
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: v0.50.3
+          
+      - name: Init TFLint
+        run: tflint --init
+
+      - name: Render terraform docs and push changes back to PR
+        uses: terraform-docs/gh-actions@main
+        with:
+          working-dir: .
+          output-file: README.md
+          output-method: inject
+      
+      - name: Install pre-commit
+        run: pip install pre-commit
+
+      - name: Run pre-commit hooks
+        run: pre-commit run --all-files
+
+      - name: Suggest fix
+        if: failure()
+        run: |
+          echo "========================================================"
+          echo "❌ ERROR: Pre-commit hooks found issues or modified files!"
+          echo "You probably forgot to run terraform-docs or tflint locally."
+          echo ""
+          echo "What changed on the server (Git Status):"
+          git status -s
+          echo ""
+          echo "🛠 HOW TO FIX:"
+          echo "1. Run locally: pre-commit run -a"
+          echo "2. Add the modified files: git add README.md (or others)"
+          echo "3. Commit and push: git commit -m 'Update docs' && git push"
+          echo "========================================================"
+          exit 1
