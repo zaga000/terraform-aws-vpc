@@ -3,7 +3,7 @@ name: Custom Auto Tag from CHANGELOG
 on:
   push:
     branches:
-      - main:
+      - main
     paths:
       - 'CHANGELOG.md'
 
@@ -49,6 +49,4 @@ jobs:
             git tag -a "$TAG_NAME" -m "${{ env.MESSAGE }}"
             git push origin "$TAG_NAME"
           fi
-
-      - name: 
 
