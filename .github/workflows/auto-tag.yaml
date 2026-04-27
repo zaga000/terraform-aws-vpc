@@ -23,30 +23,30 @@ jobs:
         id: extract_version
         run: |
           VERSION=$(awk '/##/ {print $2; exit;}' CHANGELOG.md)
-          MESSAGE=$(awk '/^## / {count++} count==1 && /^\*/ {gsub(/^\* */, ""); print}' CHANGELOG.md)
           
+          MESSAGE=$(awk '/^## / {count++} count==1 && /^\*/ {gsub(/^\* */, ""); print}' CHANGELOG.md)
           
           if [[ -z "$VERSION" ]]; then
             echo "ERROR: No version found in CHANGELOG.md"
             exit 1
           fi
 
-          echo "Found version: $VERSION"
           echo "VERSION=$VERSION" >> $GITHUB_ENV
+          
+          echo "MESSAGE<<EOF" >> $GITHUB_ENV
+          echo "$MESSAGE" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
-      - name: Create Git Tag
-        id: create_tag
+      - name: Create and Push Tag
         run: |
           git config user.name "GitHub Actions Bot"
           git config user.email "actions@github.com"
-
-      - name: Create Tag
-        run: |
+          
           TAG_NAME="v${{ env.VERSION }}"
+          
           if git rev-parse -q --verify "refs/tags/${TAG_NAME}" > /dev/null; then
-            echo "Tag ${TAG_NAME} already exists. Skipping tag creation."
+            echo "Tag ${TAG_NAME} already exists. Skipping."
           else
             git tag -a "$TAG_NAME" -m "${{ env.MESSAGE }}"
             git push origin "$TAG_NAME"
           fi
-
