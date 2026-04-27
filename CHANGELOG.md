@@ -1,7 +1,7 @@
 # CHANGELOG
 
 ## 0.0.3
-* feat: configure pre-commits (terraform-docs, tflint) for automation code check
+* feat: configure pre-commits (terraform-docs, tflint) for automation code check 
 
 ## 0.0.2
 * feat: add provisioner for vpc and subnets
