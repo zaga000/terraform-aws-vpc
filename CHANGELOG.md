@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 0.0.4
+* Added basic example for TFC UI
+
 ## 0.0.3
 * feat: configure pre-commits (terraform-docs, tflint) for automation code check 
 
